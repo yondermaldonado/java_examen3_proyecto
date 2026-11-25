@@ -1,4 +1,3 @@
-
 package com.carmotors.modelo;
 
 import java.time.LocalDate;
@@ -6,8 +5,18 @@ import java.time.LocalDate;
 public record FiltroReporte(
         LocalDate fechaInicio,
         LocalDate fechaFin,
-        OrdenReporte orden
+        OrdenReporte orden,
+        String tipoMantenimiento
 ) {
+
+    // Constructor compatible con los reportes anteriores.
+    public FiltroReporte(
+            LocalDate fechaInicio,
+            LocalDate fechaFin,
+            OrdenReporte orden
+    ) {
+        this(fechaInicio, fechaFin, orden, null);
+    }
 
     public FiltroReporte {
 
@@ -26,6 +35,16 @@ public record FiltroReporte(
         if (orden == null) {
             throw new IllegalArgumentException(
                     "Debes seleccionar un orden"
+            );
+        }
+
+        // Validación del nuevo filtro.
+        if (tipoMantenimiento != null
+                && !tipoMantenimiento.equals("Preventivo")
+                && !tipoMantenimiento.equals("Correctivo")) {
+
+            throw new IllegalArgumentException(
+                    "Tipo de mantenimiento inválido"
             );
         }
     }

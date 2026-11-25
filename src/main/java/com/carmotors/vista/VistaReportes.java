@@ -43,29 +43,105 @@ public final class VistaReportes {
     }
 
     private void ejecutarConsulta(TipoReporte tipo) {
-        consola.mostrar("Escribe 0 en cualquier pregunta para cancelar.");
+
+        consola.mostrar(
+                "Escribe 0 en cualquier pregunta para cancelar."
+        );
+
         String inicio = leerDato("Fecha inicial (AAAA-MM-DD)");
+
         if (inicio == null) return;
+
         String fin = leerDato("Fecha final (AAAA-MM-DD)");
+
         if (fin == null) return;
-        consola.mostrar("Orden: 1. Mayor cantidad | 2. Menor cantidad | 3. Nombre A-Z | 0. Cancelar");
-        String opcion = consola.leerOpcion("Orden", "1", "2", "3", "0");
-        if (opcion == null || "0".equals(opcion)) return;
-        OrdenReporte orden = switch (opcion) {
-            case "1" -> OrdenReporte.CANTIDAD_DESC;
-            case "2" -> OrdenReporte.CANTIDAD_ASC;
-            case "3" -> OrdenReporte.NOMBRE_ASC;
-            default -> throw new IllegalStateException("Opción ya validada");
-        };
-        try {
-            ReporteDTO reporte = controlador.generar(tipo, inicio, fin, orden);
-            imprimir(reporte);
-        } catch (ValidacionException | IllegalArgumentException | IllegalStateException error) {
-            consola.mostrar("Error: " + error.getMessage());
-        } catch (RuntimeException error) {
-            // Los errores JDBC ya fueron envueltos por la capa DAO/Service.
-            consola.mostrar("No se pudo generar el reporte: " + error.getMessage());
+
+        // Nuevo filtro.
+        String tipoMantenimiento = null;
+
+        // Solo se pregunta en el reporte de servicios solicitados.
+        if (tipo == TipoReporte.SERVICIOS_SOLICITADOS) {
+
+            consola.mostrar("TIPO DE MANTENIMIENTO");
+            consola.mostrar("1. Todos");
+            consola.mostrar("2. Preventivo");
+            consola.mostrar("3. Correctivo");
+            consola.mostrar("0. Cancelar");
+
+            String opcionMantenimiento = consola.leerOpcion(
+                    "Tipo de mantenimiento",
+                    "1", "2", "3", "0"
+            );
+
+            if (opcionMantenimiento == null
+                    || opcionMantenimiento.equals("0")) {
+                return;
+            }
+
+            tipoMantenimiento = switch (opcionMantenimiento) {
+
+                case "1" -> null;
+
+                case "2" -> "Preventivo";
+
+                case "3" -> "Correctivo";
+
+                default -> throw new IllegalStateException(
+                        "Opción ya validada"
+                );
+            };
         }
+
+        consola.mostrar(
+                "Orden: 1. Mayor cantidad | 2. Menor cantidad"
+                        + " | 3. Nombre A-Z | 0. Cancelar"
+        );
+
+        String opcion = consola.leerOpcion(
+                "Orden", "1", "2", "3", "0"
+        );
+
+        if (opcion == null || "0".equals(opcion)) return;
+
+        OrdenReporte orden = switch (opcion) {
+
+            case "1" -> OrdenReporte.CANTIDAD_DESC;
+
+            case "2" -> OrdenReporte.CANTIDAD_ASC;
+
+            case "3" -> OrdenReporte.NOMBRE_ASC;
+
+            default -> throw new IllegalStateException(
+                    "Opción ya validada"
+            );
+        };
+
+        try {
+
+            ReporteDTO reporte = controlador.generar(
+                    tipo,
+                    inicio,
+                    fin,
+                    orden,
+                    tipoMantenimiento
+            );
+
+            imprimir(reporte);
+
+        } catch (ValidacionException
+                 | IllegalArgumentException
+                 | IllegalStateException error) {
+
+            consola.mostrar("Error: " + error.getMessage());
+
+        } catch (RuntimeException error) {
+
+            consola.mostrar(
+                    "No se pudo generar el reporte: "
+                            + error.getMessage()
+            );
+        }
+
         consola.esperar();
     }
 
@@ -78,6 +154,19 @@ public final class VistaReportes {
         consola.titulo(reporte.titulo());
         consola.mostrar("Periodo: " + reporte.filtro().fechaInicio() + " a "
                 + reporte.filtro().fechaFin());
+        if (reporte.tipo() == TipoReporte.SERVICIOS_SOLICITADOS) {
+
+            String mantenimiento =
+                    reporte.filtro().tipoMantenimiento();
+
+            if (mantenimiento == null) {
+                mantenimiento = "Todos";
+            }
+
+            consola.mostrar(
+                    "Tipo de mantenimiento: " + mantenimiento
+            );
+        }
         String unidad = switch (reporte.tipo()) {
             case SERVICIOS_SOLICITADOS -> "órdenes";
             case PRODUCTIVIDAD_TECNICOS -> "participaciones";

@@ -30,16 +30,52 @@ public final class ReporteController {
     }
 
     /** Las fechas son inclusivas y deben tener formato ISO AAAA-MM-DD. */
-    public ReporteDTO generar(TipoReporte tipo, String fechaInicio, String fechaFin, OrdenReporte orden) {
-        Objects.requireNonNull(tipo, "Debes indicar el tipo de reporte");
-        Objects.requireNonNull(orden, "Debes indicar cómo ordenar los resultados");
+    public ReporteDTO generar(
+            TipoReporte tipo,
+            String fechaInicio,
+            String fechaFin,
+            OrdenReporte orden
+    ) {
+        return generar(
+                tipo,
+                fechaInicio,
+                fechaFin,
+                orden,
+                null
+        );
+    }
+
+    public ReporteDTO generar(
+            TipoReporte tipo,
+            String fechaInicio,
+            String fechaFin,
+            OrdenReporte orden,
+            String tipoMantenimiento
+    ) {
+
+        Objects.requireNonNull(
+                tipo, "Debes indicar el tipo de reporte"
+        );
+
+        Objects.requireNonNull(
+                orden, "Debes indicar cómo ordenar los resultados"
+        );
+
         ReporteStrategy estrategia = estrategias.get(tipo);
+
         if (estrategia == null) {
-            throw new ValidacionException("El reporte solicitado no está configurado.");
+            throw new ValidacionException(
+                    "El reporte solicitado no está configurado."
+            );
         }
+
         FiltroReporte filtro = new FiltroReporte(
                 convertirFecha(fechaInicio, "inicial"),
-                convertirFecha(fechaFin, "final"), orden);
+                convertirFecha(fechaFin, "final"),
+                orden,
+                tipoMantenimiento
+        );
+
         return estrategia.generar(filtro);
     }
 
@@ -53,4 +89,5 @@ public final class ReporteController {
             throw new ValidacionException("La fecha " + nombre + " debe tener formato AAAA-MM-DD.");
         }
     }
+
 }
